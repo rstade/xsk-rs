@@ -23,11 +23,11 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use crate::config::UmemConfigOpts;
 use crate::{
     config::UmemConfig,
     ring::{XskRingCons, XskRingProd},
 };
-use crate::config::UmemConfigOpts;
 
 /// Wrapper around a pointer to some [`Umem`].
 #[derive(Debug)]
@@ -197,8 +197,8 @@ impl Umem {
 
         Ok((umem, frame_descs))
     }
-/// same as new but using the latest API of lib_xdp for umem creation, namely xdp_umem_create_opts
-/// this supports flags and metadata
+    /// same as new but using the latest API of lib_xdp for umem creation, namely xdp_umem_create_opts
+    /// this supports flags and metadata
     pub fn new_with_opts(
         mut config: UmemConfigOpts,
         use_huge_pages: bool,
@@ -224,7 +224,6 @@ impl Umem {
                 &mut config.into(),
             )
         };
-
 
         let umem_ptr = match NonNull::new(umem_ptr) {
             Some(umem_ptr) => {
@@ -457,7 +456,7 @@ impl From<UmemConfig> for FrameLayout {
 impl From<UmemConfigOpts> for FrameLayout {
     #[inline]
     fn from(c: UmemConfigOpts) -> Self {
-        let cc= UmemConfig::from(c);
+        let cc = UmemConfig::from(c);
         FrameLayout::from(cc)
     }
 }

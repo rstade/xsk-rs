@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{ring::XskRingProd, socket::Fd};
 
-use super::{Umem, frame::FrameDesc};
+use super::{frame::FrameDesc, Umem};
 
 /// Used to transfer ownership of [`Umem`](super::Umem) frames from
 /// user-space to kernel-space.
@@ -56,7 +56,9 @@ impl FillQueue {
 
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), nb, &mut idx) };
+        let cnt = unsafe {
+            libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), nb, &mut idx)
+        };
 
         if cnt > 0 {
             for desc in descs.iter().take(cnt as usize) {
@@ -85,11 +87,13 @@ impl FillQueue {
     pub unsafe fn produce_one(&mut self, desc: &FrameDesc) -> usize {
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), 1, &mut idx) };
+        let cnt =
+            unsafe { libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), 1, &mut idx) };
 
         if cnt > 0 {
             unsafe {
-                *libxdp_sys::xsk_ring_prod__fill_addr(self.ring.as_mut().as_mut(), idx) = desc.addr as u64
+                *libxdp_sys::xsk_ring_prod__fill_addr(self.ring.as_mut().as_mut(), idx) =
+                    desc.addr as u64
             };
 
             unsafe { libxdp_sys::xsk_ring_prod__submit(self.ring.as_mut().as_mut(), cnt) };
@@ -190,11 +194,6 @@ impl FillQueue {
     ///   will be min(desired, actual_free_slots).
     #[inline]
     pub fn nb_free(&mut self, desired: u32) -> u32 {
-        unsafe {
-            libxdp_sys::xsk_prod_nb_free(
-                self.ring.as_mut().as_mut(),
-                desired
-            )
-        }
+        unsafe { libxdp_sys::xsk_prod_nb_free(self.ring.as_mut().as_mut(), desired) }
     }
 }

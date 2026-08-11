@@ -3,7 +3,7 @@ use std::{io, os::unix::prelude::AsRawFd, ptr};
 
 use crate::{ring::XskRingProd, umem::frame::FrameDesc, util};
 
-use super::{Socket, fd::Fd};
+use super::{fd::Fd, Socket};
 
 /// The transmitting side of an AF_XDP [`Socket`].
 ///
@@ -53,7 +53,9 @@ impl TxQueue {
 
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), nb, &mut idx) };
+        let cnt = unsafe {
+            libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), nb, &mut idx)
+        };
 
         if cnt > 0 {
             for desc in descs.iter().take(cnt as usize) {
@@ -85,7 +87,8 @@ impl TxQueue {
     pub unsafe fn produce_one(&mut self, desc: &FrameDesc) -> usize {
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), 1, &mut idx) };
+        let cnt =
+            unsafe { libxdp_sys::xsk_ring_prod__reserve(self.ring.as_mut().as_mut(), 1, &mut idx) };
 
         if cnt > 0 {
             let send_pkt_desc =
@@ -217,11 +220,6 @@ impl TxQueue {
     ///  will be min(desired, actual_free_slots).
     #[inline]
     pub fn nb_free(&mut self, desired: u32) -> u32 {
-        unsafe {
-            libxdp_sys::xsk_prod_nb_free(
-                self.ring.as_mut().as_mut(),
-                desired
-            )
-        }
+        unsafe { libxdp_sys::xsk_prod_nb_free(self.ring.as_mut().as_mut(), desired) }
     }
 }

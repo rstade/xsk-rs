@@ -1,4 +1,4 @@
-use etherparse::{PacketBuilder, err::packet::BuildWriteError};
+use etherparse::{err::packet::BuildWriteError, PacketBuilder};
 
 use super::veth_setup::VethDevConfig;
 

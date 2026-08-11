@@ -1,12 +1,12 @@
 #[allow(dead_code)]
 mod setup;
-use setup::{ETHERNET_PACKET, VethDevConfig, Xsk, veth_setup};
+use setup::{veth_setup, VethDevConfig, Xsk, ETHERNET_PACKET};
 
 use serial_test::serial;
 use std::{convert::TryInto, io::Write};
 use xsk_rs::{
-    Socket, Umem,
     config::{LibxdpFlags, SocketConfig, UmemConfig},
+    Socket, Umem,
 };
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

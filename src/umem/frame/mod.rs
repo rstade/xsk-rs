@@ -418,7 +418,7 @@ mod tests {
 
     use libxdp_sys::xdp_desc;
 
-    use crate::umem::{FrameDesc, FrameLayout, UmemRegion, frame::XDP_PKT_CONTD};
+    use crate::umem::{frame::XDP_PKT_CONTD, FrameDesc, FrameLayout, UmemRegion};
 
     #[test]
     fn writes_persist() {

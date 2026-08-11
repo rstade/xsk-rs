@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{ring::XskRingCons, umem::frame::FrameDesc};
 
-use super::{Socket, fd::Fd};
+use super::{fd::Fd, Socket};
 
 /// The receiving side of an AF_XDP [`Socket`].
 ///
@@ -49,7 +49,8 @@ impl RxQueue {
 
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), nb, &mut idx) };
+        let cnt =
+            unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), nb, &mut idx) };
 
         if cnt > 0 {
             for desc in descs.iter_mut().take(cnt as usize) {
@@ -83,7 +84,8 @@ impl RxQueue {
     pub unsafe fn consume_one(&mut self, desc: &mut FrameDesc) -> usize {
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), 1, &mut idx) };
+        let cnt =
+            unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), 1, &mut idx) };
 
         if cnt > 0 {
             let recv_pkt_desc =

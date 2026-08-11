@@ -1,6 +1,6 @@
 use crate::ring::XskRingCons;
 
-use super::{Umem, frame::FrameDesc};
+use super::{frame::FrameDesc, Umem};
 
 /// Used to transfer ownership of [`Umem`](super::Umem) frames from
 /// kernel-space to user-space.
@@ -50,12 +50,14 @@ impl CompQueue {
 
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), nb, &mut idx) };
+        let cnt =
+            unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), nb, &mut idx) };
 
         if cnt > 0 {
             for desc in descs.iter_mut().take(cnt as usize) {
-                let addr =
-                    unsafe { *libxdp_sys::xsk_ring_cons__comp_addr(self.ring.as_ref().as_ref(), idx) };
+                let addr = unsafe {
+                    *libxdp_sys::xsk_ring_cons__comp_addr(self.ring.as_ref().as_ref(), idx)
+                };
 
                 desc.addr = addr as usize;
                 desc.lengths.data = 0;
@@ -82,10 +84,12 @@ impl CompQueue {
     pub unsafe fn consume_one(&mut self, desc: &mut FrameDesc) -> usize {
         let mut idx = 0;
 
-        let cnt = unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), 1, &mut idx) };
+        let cnt =
+            unsafe { libxdp_sys::xsk_ring_cons__peek(self.ring.as_mut().as_mut(), 1, &mut idx) };
 
         if cnt > 0 {
-            let addr = unsafe { *libxdp_sys::xsk_ring_cons__comp_addr(self.ring.as_ref().as_ref(), idx) };
+            let addr =
+                unsafe { *libxdp_sys::xsk_ring_cons__comp_addr(self.ring.as_ref().as_ref(), idx) };
 
             desc.addr = addr as usize;
             desc.lengths.data = 0;
@@ -109,11 +113,6 @@ impl CompQueue {
     ///  will be min(desired, actual_available).
     #[inline]
     pub fn nb_avail(&mut self, desired: u32) -> u32 {
-        unsafe {
-            libxdp_sys::xsk_cons_nb_avail(
-                self.ring.as_mut().as_mut(),
-                desired
-            )
-        }
+        unsafe { libxdp_sys::xsk_cons_nb_avail(self.ring.as_mut().as_mut(), desired) }
     }
 }

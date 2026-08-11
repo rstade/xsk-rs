@@ -8,7 +8,7 @@ use std::{net::Ipv4Addr, num::NonZeroU32};
 use xsk_rs::{
     config::{Interface, SocketConfig, UmemConfig},
     socket::{RxQueue, Socket, TxQueue},
-    umem::{CompQueue, FillQueue, Umem, frame::FrameDesc},
+    umem::{frame::FrameDesc, CompQueue, FillQueue, Umem},
 };
 
 pub const ETHERNET_PACKET: [u8; 42] = [
