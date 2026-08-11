@@ -25,11 +25,10 @@ use std::{
 /// [`mtu`]: crate::config::UmemConfig::mtu
 #[derive(Debug, Default, Clone, Copy)]
 pub struct SegmentLengths {
-    /// changed both members to be public, see FrameDesc, rstade
     /// length of the headroom segment
-    pub headroom: usize,
+    pub(crate) headroom: usize,
     /// length of the packet data segment
-    pub data: usize,
+    pub(crate) data: usize,
 }
 
 impl SegmentLengths {
@@ -46,6 +45,10 @@ impl SegmentLengths {
     }
 }
 
+/// This option will be set on all but the last `FrameDesc` if multi-buffer
+/// is enabled. Check this to determine if more fragments exist for this packet.
+const XDP_PKT_CONTD: u32 = 1 << 0;
+
 /// A [`Umem`](super::Umem) frame descriptor.
 ///
 /// Used to pass frame information between the kernel and
@@ -54,18 +57,11 @@ impl SegmentLengths {
 /// the packet data segment of some frame. `lengths` describes the
 /// length (in bytes) of any data stored in the frame's headroom or
 /// data segments.
-///
-/// rstade: We need to make the members of this struct public for recreating
-/// FrameDesc instances from raw pointers in protocol data units (PDUs)
-/// Of course, this is inherently unsafe but required for performance reasons.
 #[derive(Debug, Clone, Copy)]
 pub struct FrameDesc {
-    /// points to the start of the packet data segment of the frame
-    pub addr: usize,
-    /// options for the frame, such as checksum offloading or VLAN tagging
-    pub options: u32,
-    /// current headroom and packet data lengths for the frame
-    pub lengths: SegmentLengths,
+    pub(crate) addr: usize,
+    pub(crate) options: u32,
+    pub(crate) lengths: SegmentLengths,
 }
 
 impl FrameDesc {
@@ -79,6 +75,18 @@ impl FrameDesc {
             options: 0,
             lengths: SegmentLengths::default(),
         }
+    }
+
+    /// Replaces the default options with the provided value.
+    pub fn with_options(mut self, options: u32) -> Self {
+        self.options = options;
+        self
+    }
+
+    /// Replaces the default segment lengths.
+    pub fn with_lengths(mut self, headroom: usize, data: usize) -> Self {
+        self.lengths = SegmentLengths { headroom, data };
+        self
     }
 
     /// The starting address of the packet data segment of the frame
@@ -105,6 +113,13 @@ impl FrameDesc {
     #[inline]
     pub fn set_options(&mut self, options: u32) {
         self.options = options
+    }
+
+    /// True if multi-buffer is enabled and we have more frames for
+    /// this packet.
+    #[inline]
+    pub fn has_more_frames(&self) -> bool {
+        (self.options & XDP_PKT_CONTD) == 1
     }
 
     #[inline]
@@ -403,7 +418,7 @@ mod tests {
 
     use libxdp_sys::xdp_desc;
 
-    use crate::umem::{FrameDesc, FrameLayout, UmemRegion};
+    use crate::umem::{FrameDesc, FrameLayout, UmemRegion, frame::XDP_PKT_CONTD};
 
     #[test]
     fn writes_persist() {
@@ -481,6 +496,32 @@ mod tests {
             },
             b"world!"
         );
+    }
+
+    #[test]
+    fn has_more_frames_returns_false_when_contd_flag_not_set() {
+        let mut desc = FrameDesc::new(0);
+        desc.set_options(0);
+        assert_eq!(desc.has_more_frames(), false);
+    }
+
+    #[test]
+    fn has_more_frames_returns_true_when_contd_flag_set() {
+        let mut desc = FrameDesc::new(0);
+        desc.set_options(XDP_PKT_CONTD);
+        assert_eq!(desc.has_more_frames(), true);
+    }
+
+    #[test]
+    fn has_more_frames_with_other_flags_set() {
+        let mut desc = FrameDesc::new(0);
+        // Set multiple flags including XDP_PKT_CONTD
+        desc.set_options(XDP_PKT_CONTD | 0x02 | 0x04);
+        assert_eq!(desc.has_more_frames(), true);
+
+        // Set other flags but not XDP_PKT_CONTD
+        desc.set_options(0x02 | 0x04 | 0x08);
+        assert_eq!(desc.has_more_frames(), false);
     }
 
     #[test]
