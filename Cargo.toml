@@ -1,6 +1,6 @@
 [package]
 name = "xsk-rs"
-version = "0.8.3"
+version = "0.8.0"
 authors = ["Douglas Gray <dbgray01@gmail.com>"]
 edition = "2021"
 description = "Rust bindings for Linux AF_XDP sockets"
@@ -13,9 +13,7 @@ keywords = ["AF_XDP", "XSK", "eBPF", "XDP"]
 bitflags = "2.9.0"
 cfg-if = "1.0"
 libc = "0.2.180"
-#libxdp-sys = "0.2"
-#libxdp-sys = { path = "../libxdp-sys" }
-libxdp-sys = {git = "https://github.com/ninegamma/libxdp-sys.git", branch = "ninegamma" }
+libxdp-sys = "0.2"
 log = "0.4"
 
 [dev-dependencies]
@@ -34,3 +32,7 @@ structopt = "0.3.26"
 version = "1.44.2"
 default-features = false
 features =  ["rt-multi-thread", "macros", "sync", "signal", "time"]
+
+
+[patch.crates-io]
+libxdp-sys = {git = "https://github.com/ninegamma/libxdp-sys.git", branch = "ninegamma" }
